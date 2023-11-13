@@ -81,8 +81,8 @@ class Appointment:
 
     def __init__(self, title, master_user_name, client_user_name, start_time, end_time, price, **kwargs):
         self.title = title
-        self.master_user_name = User(master_user_name)
-        self.client_user_name = User(client_user_name)
+        self.master_user_name = User.get_user(master_user_name)
+        self.client_user_name = User.get_user(client_user_name)
         self.start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
         self.end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
         self.price = price
