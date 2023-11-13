@@ -15,7 +15,7 @@ flask = "==2.2"
 werkzeug = "==2.2.2"
 flask-migrate = "==2.5.2"
 flask-script = "==2.0.5"
-passlib = "*"
+pyopenssl = "*"
 
 [dev-packages]
 

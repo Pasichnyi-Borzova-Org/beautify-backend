@@ -81,15 +81,15 @@ def try_create_appointment():
     except db.IntegrityError:
         return {"error": "DB_INSERT_FAILED"}, 500
 
-    return jsonify({"data": {
+    return jsonify({
+        "id": Appointment.get_appointment_id(master_user_name, client_user_name, start_time, end_time),
         "title": title,
         "start_time": start_time,
         "end_time": end_time,
         "price": price,
         "description": description,
-        "master_user_name": master_user_name,
-        "client_user_name": client_user_name,
-    }
+        "master": User.get_user(master_user_name).serialize_account,
+        "client": User.get_user(client_user_name).serialize_account,
     }), 201
 
 
