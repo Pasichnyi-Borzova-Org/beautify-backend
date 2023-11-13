@@ -19,3 +19,5 @@ curl -X DELETE http://127.0.0.1:5000/appointments/maria45/2023-11-11/14/20
 curl -X DELETE http://127.0.0.1:5000/appointments/Max45/2023-11-11/14/20
 
 curl -X PUT http://127.0.0.1:5000/appointments/master/alina27/ -H "Content-Type: application/json" --data '{"username": "alina27", "title": "Manicure and Pedicure"}'
+
+curl -X DELETE https://127.0.0.1:5000/appointments/delete/28 --insecure

@@ -1,5 +1,5 @@
 import logging
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, make_response
 
 from db import get_db_connection
 from models import Appointment, User
@@ -71,26 +71,12 @@ def try_create_appointment():
             return {"error": "TIME_IS_OCCUPIED"}, 400
 
     try:
-        db.execute(
-            "INSERT INTO appointments (title, master_user_name, client_user_name,"
-            "price, start_time, end_time, description)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (title, master_user_name, client_user_name, price, start_time, end_time, description),
-        )
-        db.commit()
+        Appointment.insert_new_appointment(title, master_user_name, client_user_name, price,
+                                           start_time, end_time, description)
     except db.IntegrityError:
         return {"error": "DB_INSERT_FAILED"}, 500
 
-    return jsonify({
-        "id": Appointment.get_appointment_id(master_user_name, client_user_name, start_time, end_time),
-        "title": title,
-        "start_time": start_time,
-        "end_time": end_time,
-        "price": price,
-        "description": description,
-        "master": User.get_user(master_user_name).serialize_account,
-        "client": User.get_user(client_user_name).serialize_account,
-    }), 201
+    return jsonify(new_appointment.serialize_with_usernames), 201
 
 
 @blueprint.route("/master/<string:username>/", methods=["PUT"])
@@ -125,94 +111,18 @@ def update_master(username):
 
 @blueprint.route("/", methods=["GET"])
 def list_appointments():
-    db = get_db_connection()
-
-    cursor = db.execute("SELECT * FROM appointments")
-    appointments = cursor.fetchall()
-
-    appointment_list = []
-    for appointment in appointments:
-        cursor = db.execute("SELECT * FROM users WHERE username = ?", (appointment["master_user_name"],))
-        master = cursor.fetchone()
-        cursor = db.execute("SELECT * FROM users WHERE username = ?", (appointment["client_user_name"],))
-        client = cursor.fetchone()
-        appointment_list.append(
-            {
-                "id": appointment["id"],
-                "title": appointment["title"],
-                "start_time": appointment["start_time"],
-                "end_time": appointment["end_time"],
-                "price": appointment["price"],
-                "description": appointment["description"],
-                "master": {
-                    "username": master["username"],
-                    "is_master": master["is_master"],
-                    "name": master["name"],
-                    "surname": master["surname"],
-                    "city": master["city"]
-                },
-                "client": {
-                    "username": client["username"],
-                    "is_master": client["is_master"],
-                    "name": client["name"],
-                    "surname": client["surname"],
-                    "city": client["city"]
-                }
-            }
-        )
-
-    return jsonify(appointment_list)
+    appointments = Appointment.get_all_appointments()
+    return make_response(jsonify([appointment.serialize_with_usernames for appointment in appointments]), 200)
 
 
 # getAppointmentsOfUser(userName: String): List<DataAppointment>
 @blueprint.route("/<string:username>", methods=["GET"])
 def list_appointments_of_user(username):
-    db = get_db_connection()
-
-    cursor = db.execute("SELECT * FROM appointments WHERE client_user_name = ? or master_user_name = ?",
-                        (username, username,))
-    appointments = cursor.fetchall()
-
-    appointment_list = []
-    for appointment in appointments:
-        cursor = db.execute("SELECT * FROM users WHERE username = ?", (appointment["master_user_name"],))
-        master = cursor.fetchone()
-        cursor = db.execute("SELECT * FROM users WHERE username = ?", (appointment["client_user_name"],))
-        client = cursor.fetchone()
-        appointment_list.append(
-            {
-                "id": appointment["id"],
-                "title": appointment["title"],
-                "start_time": appointment["start_time"],
-                "end_time": appointment["end_time"],
-                "price": appointment["price"],
-                "description": appointment["description"],
-                "master": {
-                    "username": master["username"],
-                    "is_master": master["is_master"],
-                    "name": master["name"],
-                    "surname": master["surname"],
-                    "city": master["city"]
-                },
-                "client": {
-                    "username": client["username"],
-                    "is_master": client["is_master"],
-                    "name": client["name"],
-                    "surname": client["surname"],
-                    "city": client["city"]
-                }
-            }
-        )
-
-    return jsonify(appointment_list)
+    appointments = Appointment.get_all_appointments_of_user(username)
+    return make_response(jsonify([appointment.serialize_with_usernames for appointment in appointments]), 200)
 
 
 @blueprint.route("/delete/<int:id>", methods=["DELETE"])
-def delete_appointment_for_master(id):
-    db = get_db_connection()
-    logging.info(id)
-    db.execute("DELETE FROM appointments WHERE id =  ?", (id,))
-    db.commit()
-    db.close()
-
-    return f"APPOINTMENT_DELETED", 204
+def delete_appointment(id):
+    Appointment.delete_appointment(id)
+    return make_response("APPOINTMENT_DELETED", 200)
