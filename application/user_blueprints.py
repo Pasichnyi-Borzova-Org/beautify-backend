@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, request, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from db import get_db_connection
-from models import Appointment, User
+from models import User
 from utils import validate_password, update_user_table
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s:%(levelname)s:%(message)s')

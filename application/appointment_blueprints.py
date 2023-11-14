@@ -2,7 +2,7 @@ import logging
 from flask import Blueprint, jsonify, request, make_response
 
 from db import get_db_connection
-from models import Appointment, User
+from models import Appointment
 from utils import update_master_table
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s:%(levelname)s:%(message)s')
@@ -42,7 +42,6 @@ def create_appointment():
 # tryCreateAppointment(appointment: DataAppointment): ?
 @blueprint.route("/create", methods=["POST"])
 def try_create_appointment():
-    logging.info(request.get_json(force=True))
     data = request.get_json(force=True)
     title = data.get("title")
     master_user_name = data.get("master").get("username")
@@ -56,23 +55,23 @@ def try_create_appointment():
         return {"error": "REQUIRED_FIELDS_ARE_MISSING"}, 400
 
     new_appointment = Appointment(title, master_user_name, client_user_name,
-                                  start_time, end_time, price, description=description)
+                                  start_time, end_time, price, is_finished=0, description=description)
 
     db = get_db_connection()
     appointments = db.execute("SELECT * FROM appointments WHERE master_user_name = ?", (master_user_name,))
 
     for appointment in appointments:
-        if Appointment(appointment["title"], appointment["master_user_name"],
-                       appointment["client_user_name"], appointment["start_time"],
-                       appointment["end_time"], appointment["price"],
-                       description=appointment["description"], id=appointment["id"]).appointments_intersect(
-            new_appointment
-        ):
+        if (Appointment(appointment["title"], appointment["master_user_name"],
+                        appointment["client_user_name"], appointment["start_time"],
+                        appointment["end_time"], appointment["price"], appointment["is_finished"],
+                        description=appointment["description"], id=appointment["id"])
+                .appointments_intersect(new_appointment)):
+
             return {"error": "TIME_IS_OCCUPIED"}, 400
 
     try:
-        Appointment.insert_new_appointment(title, master_user_name, client_user_name, price,
-                                           start_time, end_time, description)
+        Appointment.insert_new_appointment(title, master_user_name, client_user_name,
+                                           start_time, end_time, price, description, is_finished=0)
     except db.IntegrityError:
         return {"error": "DB_INSERT_FAILED"}, 500
 
@@ -103,7 +102,6 @@ def update_master(username):
         update_master_table(db, "end_time", end_time, username)
 
     if price:
-        logging.debug(price)
         update_master_table(db, "price", price, username)
 
     return jsonify({"Updated": username}), 200
