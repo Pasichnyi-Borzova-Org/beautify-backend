@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, request, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from db import get_db_connection
-from models import Appointment, User
+from models import User
 from utils import validate_password, update_user_table
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s:%(levelname)s:%(message)s')
@@ -45,8 +45,6 @@ def create_user():
 @blueprint.route("/<string:username>/", methods=["PUT"])
 def update_user(username):
     data = request.get_json(force=True)
-
-    username = data.get("username")
     password = data.get("password")
     is_master = data.get("is_master")
     name = data.get("name")
@@ -86,18 +84,14 @@ def update_user(username):
 # getAllUsers(): List<UserAccount>
 @blueprint.route("/", methods=["GET"])
 def list_users():
-    user_list = User.get_all_users()
-    return make_response(jsonify([user.serialize_account for user in user_list]), 200)
+    users = User.get_all_users()
+    return make_response(jsonify([user.serialize_account for user in users]), 200)
 
 
 # getAccountByUsername(username: String): UserAccount
 @blueprint.route("/<string:username>/account", methods=["GET"])
 def get_user_account_info(username):
     user = User.get_user(username)
-
-    if user is None:
-        return {"error": "NO_SUCH_USER"}, 404
-
     return jsonify(user.serialize_account)
 
 
@@ -105,10 +99,6 @@ def get_user_account_info(username):
 @blueprint.route("/<string:username>/info", methods=["GET"])
 def get_user_info(username):
     user = User.get_user(username)
-
-    if user is None:
-        return {"error": "NO_SUCH_USER"}, 404
-
     return jsonify(user.serialize_info)
 
 
@@ -118,29 +108,15 @@ def login_user():
     data = request.get_json(force=True)
     username = data.get("username")
     password_from_request = data.get("password")
+    user = User.get_user(username)
 
-    db = get_db_connection()
-    user = db.execute("SELECT username, is_master, name, surname, city, password "
-                      " FROM users WHERE username = ?", (username,)).fetchone()
+    if isinstance(user, User) and check_password_hash(user.password, password_from_request):
+        return make_response(jsonify(user.serialize_account), 200)
 
-    password_from_db = user["password"]
-    if user and check_password_hash(password_from_db, password_from_request):
-        return make_response(jsonify({
-            "username": user["username"],
-            "is_master": user["is_master"],
-            "name": user["name"],
-            "surname": user["surname"],
-            "city": user["city"]
-        }), 200)
     return make_response(jsonify({"error": "NO_SUCH_USER"}), 404)
 
 
-@blueprint.route("/<string:username>/", methods=["DELETE"])
+@blueprint.route("/delete/<string:username>", methods=["DELETE"])
 def delete_user(username):
-    db = get_db_connection()
-
-    db.execute("DELETE FROM users WHERE username = ?", (username,))
-    db.commit()
-    db.close()
-
+    User.delete_user(username)
     return f"User {username} deleted", 204

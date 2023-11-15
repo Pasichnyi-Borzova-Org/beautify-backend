@@ -1,4 +1,12 @@
-curl -X POST  http://127.0.0.1:5000/users/ -H "Content-Type: application/json" -d '{"username": "Katerina12", "password": "*Parol_89", "is_master": 0, "name": "Katerina", "surname": "Vishko"}'
+# POST USERS
+curl -X POST  https://127.0.0.1:5000/users/ -H "Content-Type: application/json" -d '{"username": "Katerina12", "password": "*Parol_89", "is_master": 0, "name": "Katerina", "surname": "Vishko", "city": "Kyiv"}' --insecure
+curl -X POST  https://127.0.0.1:5000/users/ -H "Content-Type: application/json" -d '{"username": "Oleg37", "password": "(Pass_876!)", "is_master": 0, "name": "Oleg", "surname": "Samoylov", "city": "Kyiv"}' --insecure
+curl -X POST  https://127.0.0.1:5000/users/ -H "Content-Type: application/json" -d '{"username": "maria45", "password": "(Pass_876!)", "is_master": 1, "name": "Maria", "surname": "Klochko", "city": "Kyiv"}' --insecure
+curl -X POST  https://127.0.0.1:5000/users/ -H "Content-Type: application/json" -d '{"username": "anna17", "password": "Qwerty123@", "is_master": 1, "name": "Alina", "surname": "Zubareva", "city": "Kharkiv"}' --insecure
+curl -X POST  https://127.0.0.1:5000/users/ -H "Content-Type: application/json" -d '{"username": "Andrey9", "password": "P_ass_word@17", "is_master": 0, "name": "Andriy", "surname": "Konovalov", "city": "Kharkiv"}' --insecure
+
+
+
 
 curl -X POST  http://127.0.0.1:5000/users/ -H "Content-Type: application/json" -d '{"username": "Kostyan99", "password": "P@sswor_d7$", "is_master": 1, "name": "Konstyantyn", "surname": "Levanov", "city": "Kharkib"}'
 
@@ -9,9 +17,22 @@ curl -X GET http://127.0.0.1:5000/users/login -H "Content-Type: application/json
 curl -X PUT http://127.0.0.1:5000/users/Kostyan99/ -H "Content-Type: application/json" --data '{"username": "Kostyan99", "city": "Kharkiv"}'
 
 
+# POST APPOINTMENTS
+curl -X POST  https://127.0.0.1:5000/appointments/create -H "Content-Type: application/json" -d '{"title": "Manicure", "master": {"username": "maria45"}, "client": {"username": "Katerina12"}, "start_time": "2023-12-09 15:30:00", "end_time": "2023-12-09 16:10:00", "price": 250}' --insecure
+curl -X POST  https://127.0.0.1:5000/appointments/create -H "Content-Type: application/json" -d '{"title": "Pedicure", "master": {"username": "maria45"}, "client": {"username": "Oleg37"}, "start_time": "2023-11-17 11:15:00", "end_time": "2023-11-17 12:15:00", "price": 250}' --insecure
+curl -X POST  https://127.0.0.1:5000/appointments/create -H "Content-Type: application/json" -d '{"title": "Pedicure", "master": {"username": "maria45"}, "client": {"username": "Katerina12"}, "start_time": "2023-12-17 14:45:00", "end_time": "2023-11-17 15:45:00", "price": 550, "description": "No washing"}' --insecure
+curl -X POST  https://127.0.0.1:5000/appointments/create -H "Content-Type: application/json" -d '{"title": "Haircut", "master": {"username": "anna17"}, "client": {"username": "Andrey9"}, "start_time": "2023-11-25 09:35:00", "end_time": "2023-11-25 10:10:00", "price": 700}' --insecure
+curl -X POST  https://127.0.0.1:5000/appointments/create -H "Content-Type: application/json" -d '{"title": "Hair dying", "master": {"username": "anna17"}, "client": {"username": "maria45"}, "start_time": "2023-12-09 17:30:00", "end_time": "2023-12-09 18:10:00", "price": 1400}' --insecure
+
+
+curl -X POST  https://127.0.0.1:5000/appointments/create -H "Content-Type: application/json" -d '{"title": "Hair dying", "master_user_name": "anna17", "client_user_name": "maria45", "start_time": "2023-12-09 17:30:00", "end_time": "2023-12-09 18:10:00", "price": 1400}' --insecure
+
+curl -X POST  https://127.0.0.1:5000/appointments/create -H "Content-Type: application/json" -d {'client': {'city': 'Kyiv', 'is_master': 0, 'name': 'Katerina', 'surname': 'Vishko', 'username': 'Katerina12'}, 'description': 'Descr', 'end_time': '2023-12-09 16:10:00', 'id': -1, 'master': {'is_master': 1, 'name': 'Maria', 'surname': 'Kolpan', 'username': 'maria45'}, 'price': 20.0, 'start_time': '2023-12-09 15:30:00', 'title': 'Manicure'}  --insecure
+
+
+
 curl -X POST  http://127.0.0.1:5000/appointments/ -H "Content-Type: application/json" -d '{"title": "Make up", "master_user_name": "Kostyan99", "client_user_name": "Andrey07", "start_time": "2023-12-09 15:30:00", "end_time": "2023-12-09 16:10:00", "price": 250}'
 
-curl -X POST  http://127.0.0.1:5000/appointments/create/Kostyan99 -H "Content-Type: application/json" -d '{"title": "Hair coloring", "master_user_name": "Kostyan99", "client_user_name": "Andrey07", "start_time": "2023-12-09 15:30:00", "end_time": "2023-12-09 16:10:00", "price": 250}'
 
 
 curl -X DELETE http://127.0.0.1:5000/appointments/maria45/2023-11-11/14/20
@@ -19,3 +40,5 @@ curl -X DELETE http://127.0.0.1:5000/appointments/maria45/2023-11-11/14/20
 curl -X DELETE http://127.0.0.1:5000/appointments/Max45/2023-11-11/14/20
 
 curl -X PUT http://127.0.0.1:5000/appointments/master/alina27/ -H "Content-Type: application/json" --data '{"username": "alina27", "title": "Manicure and Pedicure"}'
+
+curl -X DELETE https://127.0.0.1:5000/appointments/delete/28 --insecure
