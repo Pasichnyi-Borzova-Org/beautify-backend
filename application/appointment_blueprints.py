@@ -60,6 +60,7 @@ def try_create_appointment():
 
     new_appointment = Appointment(title, master_user_name, client_user_name,
                                   start_time, end_time, price, status, description=description)
+    new_appointment.validate_status()
 
     db = get_db_connection()
     appointments = db.execute("SELECT * FROM appointments WHERE master_user_name = ?", (master_user_name,))
@@ -74,8 +75,7 @@ def try_create_appointment():
             return {"error": "TIME_IS_OCCUPIED"}, 400
 
     try:
-        Appointment.insert_new_appointment(title, master_user_name, client_user_name,
-                                           start_time, end_time, price, status, description=description)
+        new_appointment.insert_to_db()
     except db.IntegrityError:
         return {"error": "DB_INSERT_FAILED"}, 500
 
@@ -110,6 +110,12 @@ def update_master(username):
         update_master_table(db, "price", price, username)
 
     return jsonify({"Updated": username}), 200
+
+
+@blueprint.route("/complete/<int:id>", methods=["POST"])
+def complete_appointment(id):
+    appointment = Appointment.complete_appointment(id)
+    return make_response(jsonify(appointment.serialize_with_usernames), 201)
 
 
 @blueprint.route("/", methods=["GET"])
