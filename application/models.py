@@ -94,14 +94,14 @@ class User:
 class Appointment:
     db = get_db_connection()
 
-    def __init__(self, title, master_user_name, client_user_name, start_time, end_time, price, is_finished, **kwargs):
+    def __init__(self, title, master_user_name, client_user_name, start_time, end_time, price, status, **kwargs):
         self.title = title
         self.master_user_name = User.get_user(master_user_name)
         self.client_user_name = User.get_user(client_user_name)
         self.start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
         self.end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
         self.price = price
-        self.is_finished = is_finished
+        self.status = status
 
         if kwargs is not None:
             self.description = kwargs.get("description")
@@ -110,14 +110,14 @@ class Appointment:
             self.id = kwargs.get("id")
 
     @staticmethod
-    def insert_new_appointment(title, master_user_name, client_user_name, start_time,
-                               end_time, price, description, is_finished=0):
+    def insert_new_appointment(title, master_user_name, client_user_name,
+                               start_time, end_time, price, status, description):
         db = get_db_connection()
         db.execute(
             "INSERT INTO appointments (title, master_user_name, client_user_name,"
-            "price, start_time, end_time, is_finished, description)"
+            "price, start_time, end_time, status, description)"
             " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (title, master_user_name, client_user_name, price, start_time, end_time, is_finished, description),
+            (title, master_user_name, client_user_name, price, start_time, end_time, status, description),
         )
         db.commit()
         #db.close()
@@ -131,7 +131,7 @@ class Appointment:
             appointments_list.append(Appointment(appointment["title"], appointment["master_user_name"],
                                                  appointment["client_user_name"], appointment["start_time"],
                                                  appointment["end_time"], appointment["price"],
-                                                 is_finished=appointment["is_finished"],
+                                                 status=appointment["status"],
                                                  description=appointment["description"], id=appointment["id"]))
         #db.close()
         return appointments_list
@@ -147,7 +147,7 @@ class Appointment:
             appointments_list.append(Appointment(appointment["title"], appointment["master_user_name"],
                                                  appointment["client_user_name"], appointment["start_time"],
                                                  appointment["end_time"], appointment["price"],
-                                                 appointment["is_finished"],
+                                                 appointment["status"],
                                                  description=appointment["description"], id=appointment["id"]))
         #db.close()
         return appointments_list
@@ -179,7 +179,7 @@ class Appointment:
             "end_time": self.end_time.strftime('%Y-%m-%d %H:%M:%S'),
             "price": self.price,
             "description": self.description,
-            "is_finished": self.is_finished
+            "status": self.status
         }
 
     @property
@@ -195,7 +195,7 @@ class Appointment:
             "end_time": self.end_time.strftime('%Y-%m-%d %H:%M:%S'),
             "price": self.price,
             "description": self.description,
-            "is_finished": self.is_finished
+            "status": self.status
         }
 
     def appointments_intersect(self, new_appointment):

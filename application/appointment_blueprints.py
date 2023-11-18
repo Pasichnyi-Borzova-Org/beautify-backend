@@ -19,18 +19,20 @@ def create_appointment():
     start_time = data.get("start_time")
     end_time = data.get("end_time")
     price = data.get("price")
+    status = data.get("status")
     description = data.get("description") or None
 
-    if not all([title, master_user_name, client_user_name, start_time, end_time, price]):
-        logging.debug(all([title, master_user_name, client_user_name, start_time, end_time, price]))
+    if not all([title, master_user_name, client_user_name, start_time, end_time, price, status]):
+        logging.debug(all([title, master_user_name, client_user_name, start_time, end_time, price, status]))
         return {"error": "REQUIRED_FIELDS_ARE_MISSING"}, 400
 
     db = get_db_connection()
     try:
         cursor = db.execute(
-            "INSERT INTO appointments (title, master_user_name, client_user_name, price, start_time, end_time, description)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (title, master_user_name, client_user_name, price, start_time, end_time, description),
+            "INSERT INTO appointments (title, master_user_name, client_user_name, price,"
+            "status,  start_time, end_time, description)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (title, master_user_name, client_user_name, price, status, start_time, end_time, description),
         )
         db.commit()
     except db.IntegrityError:
@@ -49,13 +51,15 @@ def try_create_appointment():
     start_time = data.get("start_time")
     end_time = data.get("end_time")
     price = data.get("price")
+    status = data.get("status")
     description = data.get("description") or None
 
-    if not all([title, master_user_name, client_user_name, start_time, end_time, price]):
+    if not all([title, master_user_name, client_user_name, start_time, end_time, price, status]):
+
         return {"error": "REQUIRED_FIELDS_ARE_MISSING"}, 400
 
     new_appointment = Appointment(title, master_user_name, client_user_name,
-                                  start_time, end_time, price, is_finished=0, description=description)
+                                  start_time, end_time, price, status, description=description)
 
     db = get_db_connection()
     appointments = db.execute("SELECT * FROM appointments WHERE master_user_name = ?", (master_user_name,))
@@ -63,7 +67,7 @@ def try_create_appointment():
     for appointment in appointments:
         if (Appointment(appointment["title"], appointment["master_user_name"],
                         appointment["client_user_name"], appointment["start_time"],
-                        appointment["end_time"], appointment["price"], appointment["is_finished"],
+                        appointment["end_time"], appointment["price"], appointment["status"],
                         description=appointment["description"], id=appointment["id"])
                 .appointments_intersect(new_appointment)):
 
@@ -71,7 +75,7 @@ def try_create_appointment():
 
     try:
         Appointment.insert_new_appointment(title, master_user_name, client_user_name,
-                                           start_time, end_time, price, description, is_finished=0)
+                                           start_time, end_time, price, status, description=description)
     except db.IntegrityError:
         return {"error": "DB_INSERT_FAILED"}, 500
 
@@ -87,6 +91,7 @@ def update_master(username):
     start_time = data.get("start_time")
     end_time = data.get("end_time")
     price = data.get("price")
+    status = data.get("status")
     db = get_db_connection()
 
     if client_user_name:

@@ -20,7 +20,7 @@ CREATE TABLE  appointments (
         start_time TEXT NOT NULL,
         end_time TEXT NOT NULL,
         price NUMERIC NOT NULL,
-        is_finished INTEGER NULL,
+        status TEXT NOT NULL, ---CANNOT_COMPLETE, CAN_COMPLETE, COMPLETED
         description TEXT,
         FOREIGN KEY (master_user_name) REFERENCES users (username),
         FOREIGN KEY (client_user_name) REFERENCES users (username)
@@ -29,11 +29,18 @@ CREATE TABLE  appointments (
 DROP TABLE IF EXISTS appointment_ratings;
 CREATE TABLE appointment_ratings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    master_user_name TEXT NOT NULL,
     appointment_id INTEGER NOT NULL,
     rating NUMERIC NOT NULL,
-    FOREIGN KEY (master_user_name) REFERENCES users (username),
     FOREIGN KEY (appointment_id) REFERENCES appointments (id)
+);
+
+DROP TABLE IF EXISTS appointment_services;
+CREATE TABLE appointment_services (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    appointment_id INTEGER NOT NULL,
+    service_id NUMERIC NOT NULL,
+    FOREIGN KEY (appointment_id) REFERENCES appointments (id),
+    FOREIGN KEY (service_id) REFERENCES services (id)
 );
 
 DROP TABLE IF EXISTS services;
