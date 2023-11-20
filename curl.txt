@@ -4,6 +4,7 @@ curl -X POST  https://127.0.0.1:5000/users/ -H "Content-Type: application/json" 
 curl -X POST  https://127.0.0.1:5000/users/ -H "Content-Type: application/json" -d '{"username": "maria45", "password": "(Pass_876!)", "is_master": 1, "name": "Maria", "surname": "Klochko", "city": "Kyiv"}' --insecure
 curl -X POST  https://127.0.0.1:5000/users/ -H "Content-Type: application/json" -d '{"username": "anna17", "password": "Qwerty123@", "is_master": 1, "name": "Anna", "surname": "Zubareva", "city": "Kharkiv"}' --insecure
 curl -X POST  https://127.0.0.1:5000/users/ -H "Content-Type: application/json" -d '{"username": "Andrey9", "password": "P_ass_word@17", "is_master": 0, "name": "Andriy", "surname": "Konovalov", "city": "Kharkiv"}' --insecure
+curl -X POST  https://127.0.0.1:5000/users/ -H "Content-Type: application/json" -d '{"username": "Marina34", "password": "QWE#45671t", "is_master": 0, "name": "Marina", "surname": "Letova", "city": "Kharkiv"}' --insecure
 
 
 
