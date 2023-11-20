@@ -32,7 +32,7 @@ class User:
                 (self.username, self.password, int(self.is_master), self.name, self.surname, self.created_account,
                  self.completed_orders, self.average_rating, self.city), )
             self.db.commit()
-            #self.db.close()
+            # self.db.close()
         except self.db.IntegrityError:
             return {"error": f"USERNAME_ALREADY_EXISTS"}, 400
 
@@ -64,14 +64,14 @@ class User:
             user_list.append(User(user["username"], user["password"], user["is_master"], user["name"],
                                   user["surname"], user["created_account"], city=user["city"],
                                   completed_orders=user["completed_orders"], average_rating=user["average_rating"]))
-        #db.close()
+        # db.close()
         return user_list
 
     @staticmethod
     def get_user(username):
         db = get_db_connection()
         user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-        #db.close()
+        # db.close()
 
         if user is None:
             return {"error": "NO_SUCH_USER"}
@@ -88,20 +88,20 @@ class User:
         db.execute("DELETE FROM appointments WHERE master_user_name = ? or client_user_name = ?",
                    (username, username,))
         db.commit()
-        #db.close()
+        # db.close()
 
 
 class Appointment:
     db = get_db_connection()
 
-    def __init__(self, title, master_user_name, client_user_name, start_time, end_time, price, is_finished, **kwargs):
+    def __init__(self, title, master_user_name, client_user_name, start_time, end_time, price, status, **kwargs):
         self.title = title
         self.master_user_name = User.get_user(master_user_name)
         self.client_user_name = User.get_user(client_user_name)
         self.start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
         self.end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
         self.price = price
-        self.is_finished = is_finished
+        self.status = status
 
         if kwargs is not None:
             self.description = kwargs.get("description")
@@ -110,17 +110,17 @@ class Appointment:
             self.id = kwargs.get("id")
 
     @staticmethod
-    def insert_new_appointment(title, master_user_name, client_user_name, start_time,
-                               end_time, price, description, is_finished=0):
+    def insert_new_appointment(title, master_user_name, client_user_name,
+                               start_time, end_time, price, status, description):
         db = get_db_connection()
         db.execute(
             "INSERT INTO appointments (title, master_user_name, client_user_name,"
-            "price, start_time, end_time, is_finished, description)"
+            "price, start_time, end_time, status, description)"
             " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (title, master_user_name, client_user_name, price, start_time, end_time, is_finished, description),
+            (title, master_user_name, client_user_name, price, start_time, end_time, status, description),
         )
         db.commit()
-        #db.close()
+        # db.close()
 
     @staticmethod
     def get_all_appointments():
@@ -128,12 +128,18 @@ class Appointment:
         appointments = db.execute("SELECT * FROM appointments").fetchall()
         appointments_list = []
         for appointment in appointments:
+            if (appointment["status"] != "COMPLETED") and (datetime.strptime(appointment["start_time"],
+                                                        "%Y-%m-%d %H:%M:%S") < datetime.now()):
+                status = "CAN_COMPLETE"
+            else:
+                status = appointment["status"]
+
             appointments_list.append(Appointment(appointment["title"], appointment["master_user_name"],
                                                  appointment["client_user_name"], appointment["start_time"],
                                                  appointment["end_time"], appointment["price"],
-                                                 is_finished=appointment["is_finished"],
+                                                 status=status,
                                                  description=appointment["description"], id=appointment["id"]))
-        #db.close()
+        # db.close()
         return appointments_list
 
     @staticmethod
@@ -144,12 +150,18 @@ class Appointment:
 
         appointments_list = []
         for appointment in appointments:
+            if (appointment["status"] != "COMPLETED") and (datetime.strptime(appointment["start_time"],
+                                                        "%Y-%m-%d %H:%M:%S") < datetime.now()):
+                status = "CAN_COMPLETE"
+            else:
+                status = appointment["status"]
+
             appointments_list.append(Appointment(appointment["title"], appointment["master_user_name"],
                                                  appointment["client_user_name"], appointment["start_time"],
                                                  appointment["end_time"], appointment["price"],
-                                                 appointment["is_finished"],
+                                                 status=status,
                                                  description=appointment["description"], id=appointment["id"]))
-        #db.close()
+        # db.close()
         return appointments_list
 
     @staticmethod
@@ -158,15 +170,26 @@ class Appointment:
         appointment_id = db.execute("SELECT id FROM appointments WHERE client_user_name = ? and master_user_name = ?"
                                     "and start_time = ? and end_time = ?",
                                     (client_user_name, master_user_name, start_time, end_time,)).fetchone()
-        #db.close()
+        # db.close()
         return appointment_id["id"]
+
+    @staticmethod
+    def complete_appointment(id):
+        db = get_db_connection()
+        db.execute("""UPDATE appointments SET status = ? WHERE id = ?""", ("COMPLETED", id,))
+        db.commit()
+        appointment = db.execute("SELECT * FROM appointments WHERE id =?", (id,)).fetchone()
+        return Appointment(appointment["title"], appointment["master_user_name"],
+                           appointment["client_user_name"], appointment["start_time"],
+                           appointment["end_time"], appointment["price"],
+                           appointment["status"], description=appointment["description"], id=id)
 
     @staticmethod
     def delete_appointment(id):
         db = get_db_connection()
         db.execute("DELETE FROM appointments WHERE id =  ?", (id,))
         db.commit()
-        #db.close()
+        # db.close()
 
     @property
     def serialize_without_usernames(self):
@@ -179,7 +202,7 @@ class Appointment:
             "end_time": self.end_time.strftime('%Y-%m-%d %H:%M:%S'),
             "price": self.price,
             "description": self.description,
-            "is_finished": self.is_finished
+            "status": self.status
         }
 
     @property
@@ -195,8 +218,23 @@ class Appointment:
             "end_time": self.end_time.strftime('%Y-%m-%d %H:%M:%S'),
             "price": self.price,
             "description": self.description,
-            "is_finished": self.is_finished
+            "status": self.status
         }
+
+    def insert_to_db(self):
+        self.db.execute(
+            "INSERT INTO appointments (title, master_user_name, client_user_name,"
+            "price, start_time, end_time, status, description)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (self.title, self.master_user_name.username, self.client_user_name.username, self.price,
+             self.start_time.strftime('%Y-%m-%d %H:%M:%S'), self.end_time.strftime('%Y-%m-%d %H:%M:%S'),
+             self.status, self.description),
+        )
+        self.db.commit()
+
+    def validate_status(self):
+        if self.start_time < datetime.now():
+            self.status = "CAN_COMPLETE"
 
     def appointments_intersect(self, new_appointment):
         return (((self.start_time > new_appointment.start_time) and (self.start_time < new_appointment.end_time))
