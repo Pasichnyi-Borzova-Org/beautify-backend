@@ -14,15 +14,11 @@ class User:
         self.surname = surname
         self.password = password
         self.created_account = created_account
+        self.average_rating = self.calculate_rating(username)
+        self.completed_orders = self.calculate_completed_orders(username)
 
         if kwargs is not None:
             self.city = kwargs.get("city")
-
-        if kwargs is not None:
-            self.completed_orders = kwargs.get("completed_orders")
-
-        if kwargs is not None:
-            self.average_rating = kwargs.get("average_rating")
 
     def insert_new_user(self):
         try:
@@ -81,6 +77,26 @@ class User:
                     completed_orders=user["completed_orders"], average_rating=user["average_rating"])
 
     @staticmethod
+    def calculate_rating(username):
+        db = get_db_connection()
+        average_rating = db.execute("SELECT avg(appointments.rating) as average_rating "
+                                    "FROM users INNER JOIN appointments "
+                                    "ON users.username = appointments.master_user_name WHERE users.username = ?"
+                                    "AND appointments.rating IS NOT NULL",
+                                    (username,)).fetchone()
+        return average_rating["average_rating"]
+
+    @staticmethod
+    def calculate_completed_orders(username):
+        db = get_db_connection()
+        completed_orders = db.execute("SELECT count(appointments.id) as completed_orders "
+                                      "FROM appointments "
+                                      "WHERE master_user_name = ?"
+                                      "AND appointments.status = ?",
+                                      (username, 'COMPLETED',)).fetchone()
+        return completed_orders["completed_orders"]
+
+    @staticmethod
     def delete_user(username):
         db = get_db_connection()
 
@@ -114,7 +130,7 @@ class Appointment:
 
     @staticmethod
     def insert_new_appointment(title, master_user_name, client_user_name,
-                               start_time, end_time, price, status, description):
+                               start_time, end_time, price, status, description, rating):
         db = get_db_connection()
         db.execute(
             "INSERT INTO appointments (title, master_user_name, client_user_name,"
@@ -132,7 +148,7 @@ class Appointment:
         appointments_list = []
         for appointment in appointments:
             if (appointment["status"] != "COMPLETED") and (datetime.strptime(appointment["start_time"],
-                                                        "%Y-%m-%d %H:%M:%S") < datetime.now()):
+                                                                             "%Y-%m-%d %H:%M:%S") < datetime.now()):
                 status = "CAN_COMPLETE"
             else:
                 status = appointment["status"]
@@ -154,7 +170,7 @@ class Appointment:
         appointments_list = []
         for appointment in appointments:
             if (appointment["status"] != "COMPLETED") and (datetime.strptime(appointment["start_time"],
-                                                        "%Y-%m-%d %H:%M:%S") < datetime.now()):
+                                                                             "%Y-%m-%d %H:%M:%S") < datetime.now()):
                 status = "CAN_COMPLETE"
             else:
                 status = appointment["status"]
