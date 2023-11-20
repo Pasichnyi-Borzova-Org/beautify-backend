@@ -109,15 +109,18 @@ class Appointment:
         if kwargs is not None:
             self.id = kwargs.get("id")
 
+        if kwargs is not None:
+            self.rating = kwargs.get("rating")
+
     @staticmethod
     def insert_new_appointment(title, master_user_name, client_user_name,
                                start_time, end_time, price, status, description):
         db = get_db_connection()
         db.execute(
             "INSERT INTO appointments (title, master_user_name, client_user_name,"
-            "price, start_time, end_time, status, description)"
+            "price, start_time, end_time, status, description, rating)"
             " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (title, master_user_name, client_user_name, price, start_time, end_time, status, description),
+            (title, master_user_name, client_user_name, price, start_time, end_time, status, description, rating),
         )
         db.commit()
         # db.close()
@@ -137,7 +140,7 @@ class Appointment:
             appointments_list.append(Appointment(appointment["title"], appointment["master_user_name"],
                                                  appointment["client_user_name"], appointment["start_time"],
                                                  appointment["end_time"], appointment["price"],
-                                                 status=status,
+                                                 status=status, rating=appointment["rating"],
                                                  description=appointment["description"], id=appointment["id"]))
         # db.close()
         return appointments_list
@@ -159,7 +162,7 @@ class Appointment:
             appointments_list.append(Appointment(appointment["title"], appointment["master_user_name"],
                                                  appointment["client_user_name"], appointment["start_time"],
                                                  appointment["end_time"], appointment["price"],
-                                                 status=status,
+                                                 status=status, rating=appointment["rating"],
                                                  description=appointment["description"], id=appointment["id"]))
         # db.close()
         return appointments_list
@@ -181,8 +184,19 @@ class Appointment:
         appointment = db.execute("SELECT * FROM appointments WHERE id =?", (id,)).fetchone()
         return Appointment(appointment["title"], appointment["master_user_name"],
                            appointment["client_user_name"], appointment["start_time"],
-                           appointment["end_time"], appointment["price"],
-                           appointment["status"], description=appointment["description"], id=id)
+                           appointment["end_time"], appointment["price"], appointment["status"],
+                           description=appointment["description"], id=id, rating=appointment["rating"])
+
+    @staticmethod
+    def rate_appointment(id, rating):
+        db = get_db_connection()
+        db.execute("""UPDATE appointments SET rating = ? WHERE id = ?""", (rating, id,))
+        db.commit()
+        appointment = db.execute("SELECT * FROM appointments WHERE id =?", (id,)).fetchone()
+        return Appointment(appointment["title"], appointment["master_user_name"],
+                           appointment["client_user_name"], appointment["start_time"],
+                           appointment["end_time"], appointment["price"], appointment["status"],
+                           description=appointment["description"], id=id, rating=appointment["rating"])
 
     @staticmethod
     def delete_appointment(id):
@@ -202,7 +216,8 @@ class Appointment:
             "end_time": self.end_time.strftime('%Y-%m-%d %H:%M:%S'),
             "price": self.price,
             "description": self.description,
-            "status": self.status
+            "status": self.status,
+            "rating": self.rating
         }
 
     @property
@@ -218,23 +233,27 @@ class Appointment:
             "end_time": self.end_time.strftime('%Y-%m-%d %H:%M:%S'),
             "price": self.price,
             "description": self.description,
-            "status": self.status
+            "status": self.status,
+            "rating": self.rating
         }
 
     def insert_to_db(self):
         self.db.execute(
             "INSERT INTO appointments (title, master_user_name, client_user_name,"
-            "price, start_time, end_time, status, description)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "price, start_time, end_time, status, description, rating)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (self.title, self.master_user_name.username, self.client_user_name.username, self.price,
              self.start_time.strftime('%Y-%m-%d %H:%M:%S'), self.end_time.strftime('%Y-%m-%d %H:%M:%S'),
-             self.status, self.description),
+             self.status, self.description, self.rating),
         )
         self.db.commit()
 
     def validate_status(self):
         if self.start_time < datetime.now():
             self.status = "CAN_COMPLETE"
+
+    def set_rating(self, rating):
+        self.rating = rating
 
     def appointments_intersect(self, new_appointment):
         return (((self.start_time > new_appointment.start_time) and (self.start_time < new_appointment.end_time))

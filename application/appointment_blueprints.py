@@ -23,7 +23,6 @@ def create_appointment():
     description = data.get("description") or None
 
     if not all([title, master_user_name, client_user_name, start_time, end_time, price, status]):
-        logging.debug(all([title, master_user_name, client_user_name, start_time, end_time, price, status]))
         return {"error": "REQUIRED_FIELDS_ARE_MISSING"}, 400
 
     db = get_db_connection()
@@ -53,13 +52,14 @@ def try_create_appointment():
     price = data.get("price")
     status = data.get("status")
     description = data.get("description") or None
+    rating = data.get("rating") or None
 
     if not all([title, master_user_name, client_user_name, start_time, end_time, price, status]):
 
         return {"error": "REQUIRED_FIELDS_ARE_MISSING"}, 400
 
     new_appointment = Appointment(title, master_user_name, client_user_name,
-                                  start_time, end_time, price, status, description=description)
+                                  start_time, end_time, price, status, description=description, rating=rating)
     new_appointment.validate_status()
 
     db = get_db_connection()
@@ -69,7 +69,7 @@ def try_create_appointment():
         if (Appointment(appointment["title"], appointment["master_user_name"],
                         appointment["client_user_name"], appointment["start_time"],
                         appointment["end_time"], appointment["price"], appointment["status"],
-                        description=appointment["description"], id=appointment["id"])
+                        description=appointment["description"], id=appointment["id"], rating=appointment["rating"])
                 .appointments_intersect(new_appointment)):
 
             return {"error": "TIME_IS_OCCUPIED"}, 400
@@ -115,6 +115,12 @@ def update_master(username):
 @blueprint.route("/complete/<int:id>", methods=["POST"])
 def complete_appointment(id):
     appointment = Appointment.complete_appointment(id)
+    return make_response(jsonify(appointment.serialize_with_usernames), 201)
+
+
+@blueprint.route("/rate/<int:id>/<int:rating>", methods=["POST"])
+def rate_appointment(id, rating):
+    appointment = Appointment.rate_appointment(id, rating)
     return make_response(jsonify(appointment.serialize_with_usernames), 201)
 
 
